@@ -1,5 +1,0 @@
-show
-info
-ass
-execute_script script.txt
-info
