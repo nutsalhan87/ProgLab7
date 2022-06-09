@@ -60,8 +60,7 @@ public class DatabaseWorker {
             statement.setString(1, route.getName());
             statement.setDouble(2, route.getCoordinates().getX());
             statement.setInt(3, route.getCoordinates().getY());
-            statement.setString(4,
-                    new SimpleDateFormat("dd/MM/yyyy hh:mm:ss").format(route.getCreationDate()));
+            statement.setTimestamp(4, new Timestamp(route.getCreationDate().getTime()));
             statement.setDouble(5,  route.getFrom().getX());
             statement.setLong(6, route.getFrom().getY());
             statement.setDouble(7,  route.getFrom().getZ());
@@ -83,15 +82,14 @@ public class DatabaseWorker {
     public static boolean updateById(Route route, Integer id, User user) {
         try {
             PreparedStatement statement = connection.prepareStatement("UPDATE postgres.public.routes SET " +
-                    "name=?, c_x=?, c_y=?,creationdate=?, from_x=?, from_y=?, from_z=?,from_name=?, to_x=?, to_y=?," +
+                    "name=?, c_x=?, c_y=?, creationdate=?, from_x=?, from_y=?, from_z=?,from_name=?, to_x=?, to_y=?," +
                     "to_z=?, distance=? WHERE ? IN (SELECT postgres.public.userdata.password FROM postgres.public.userdata " +
                     "WHERE owner=?) AND id=? AND owner=?;");
 
             statement.setString(1, route.getName());
             statement.setDouble(2, route.getCoordinates().getX());
             statement.setInt(3, route.getCoordinates().getY());
-            statement.setString(4,
-                    new SimpleDateFormat("dd/MM/yyyy hh:mm:ss").format(route.getCreationDate()));
+            statement.setTimestamp(4, new Timestamp(route.getCreationDate().getTime()));
             statement.setDouble(5, route.getFrom().getX());
             statement.setLong(6, route.getFrom().getY());
             statement.setDouble(7, route.getFrom().getZ());
