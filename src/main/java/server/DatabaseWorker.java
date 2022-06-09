@@ -13,7 +13,6 @@ import java.util.List;
 
 public class DatabaseWorker {
     private static Connection connection;
-    private static Statement statement;
 
     static {
         try {
@@ -22,7 +21,6 @@ public class DatabaseWorker {
             String user = bufferedReader.readLine();
             String password = bufferedReader.readLine();
             connection = DriverManager.getConnection(url, user, password);
-            statement = connection.createStatement();
         } catch (IOException | SQLException exc) {
             GlobalLogger.logger.error("Невозможно подключиться к базе данных. Без нее серверу капут.");
             System.exit(-1);
@@ -32,7 +30,7 @@ public class DatabaseWorker {
     private DatabaseWorker() {}
 
     public static List<Route> getAllRoutes() throws SQLException {
-        ResultSet resultSet = statement.executeQuery("SELECT * FROM postgres.public.routes");
+        ResultSet resultSet = connection.createStatement().executeQuery("SELECT * FROM postgres.public.routes");
 
         return getRoutes(resultSet);
     }
@@ -57,12 +55,24 @@ public class DatabaseWorker {
 
     public static boolean addNewRoute(Route route, User user) {
         try {
-            statement.executeUpdate("INSERT INTO postgres.public.routes values((select nextval('serial')), '" +
-                    route.getName() + "', " + route.getCoordinates().getX() + ", " + route.getCoordinates().getY() + ", '" +
-                    new SimpleDateFormat("dd/MM/yyyy hh:mm:ss").format(route.getCreationDate()) + "', " +
-                    route.getFrom().getX() + ", " + route.getFrom().getY() + ", " + route.getFrom().getZ() + ", '" +
-                    route.getFrom().getName() + "', " + route.getTo().getX() + ", " + route.getTo().getY() + ", " +
-                    route.getTo().getZ() + ", " + route.getDistance() + ", '" + user.getUser() + "');");
+            PreparedStatement statement = connection.prepareStatement("INSERT INTO postgres.public.routes " +
+                    "values((select nextval('serial')), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);");
+            statement.setString(1, route.getName());
+            statement.setDouble(2, route.getCoordinates().getX());
+            statement.setInt(3, route.getCoordinates().getY());
+            statement.setString(4,
+                    new SimpleDateFormat("dd/MM/yyyy hh:mm:ss").format(route.getCreationDate()));
+            statement.setDouble(5,  route.getFrom().getX());
+            statement.setLong(6, route.getFrom().getY());
+            statement.setDouble(7,  route.getFrom().getZ());
+            statement.setString(8,  route.getFrom().getName());
+            statement.setInt(9, route.getTo().getX());
+            statement.setInt(10, route.getTo().getY());
+            statement.setFloat(11, route.getTo().getZ());
+            statement.setDouble(12, route.getDistance());
+            statement.setString(13, user.getUser());
+
+            statement.executeUpdate();
             return true;
         } catch (SQLException sqlException) {
             GlobalLogger.logger.warn(sqlException.getMessage());
@@ -72,19 +82,32 @@ public class DatabaseWorker {
 
     public static boolean updateById(Route route, Integer id, User user) {
         try {
-            statement.executeUpdate("UPDATE postgres.public.routes SET name='" + route.getName() +"', c_x=" +
-                    route.getCoordinates().getX() + ", c_y=" + route.getCoordinates().getY() + ", creationdate='" +
-                    new SimpleDateFormat("dd/MM/yyyy hh:mm:ss").format(route.getCreationDate()) + "', from_x=" +
-                    route.getFrom().getX() + ", from_y=" + route.getFrom().getY() + ", from_z=" + route.getFrom().getZ() +
-                    ", from_name='" + route.getFrom().getName() +"', to_x=" + route.getTo().getX() + ", to_y=" +
-                    route.getTo().getY() + ", to_z=" + route.getTo().getZ() + ", distance=" + route.getDistance() +
-                    " WHERE '" + Account.hash256(user.getPassword()) + "' IN (SELECT postgres.public.userdata.password " +
-                    "FROM postgres.public.userdata WHERE owner='" +
-                    user.getUser() + "') AND id=" + id + " AND owner='" + user.getUser() +"';");
-            if (statement.getUpdateCount() != 0)
-                return true;
-            else
-                return false;
+            PreparedStatement statement = connection.prepareStatement("UPDATE postgres.public.routes SET " +
+                    "name=?, c_x=?, c_y=?,creationdate=?, from_x=?, from_y=?, from_z=?,from_name=?, to_x=?, to_y=?," +
+                    "to_z=?, distance=? WHERE ? IN (SELECT postgres.public.userdata.password FROM postgres.public.userdata " +
+                    "WHERE owner=?) AND id=? AND owner=?;");
+
+            statement.setString(1, route.getName());
+            statement.setDouble(2, route.getCoordinates().getX());
+            statement.setInt(3, route.getCoordinates().getY());
+            statement.setString(4,
+                    new SimpleDateFormat("dd/MM/yyyy hh:mm:ss").format(route.getCreationDate()));
+            statement.setDouble(5, route.getFrom().getX());
+            statement.setLong(6, route.getFrom().getY());
+            statement.setDouble(7, route.getFrom().getZ());
+            statement.setString(8, route.getFrom().getName());
+            statement.setInt(9, route.getTo().getX());
+            statement.setInt(10, route.getTo().getY());
+            statement.setFloat(11, route.getTo().getZ());
+            statement.setDouble(12, route.getDistance());
+            statement.setString(13, Account.hash256(user.getPassword()));
+            statement.setString(14, user.getUser());
+            statement.setInt(15, id);
+            statement.setString(16, user.getUser());
+
+            statement.executeUpdate();
+
+            return statement.getUpdateCount() != 0;
         } catch (SQLException sqlException) {
             GlobalLogger.logger.warn(sqlException.getMessage());
             return false;
@@ -93,9 +116,17 @@ public class DatabaseWorker {
 
     public static boolean removeById(Integer id, User user) {
         try {
-            statement.executeUpdate("DELETE FROM postgres.public.routes WHERE id=" + id + " AND '" +
-                    Account.hash256(user.getPassword()) + "' IN (SELECT postgres.public.userdata.password " +
-                    "FROM postgres.public.userdata where owner='" + user.getUser() + "') AND owner='" + user.getUser() + "';");
+            PreparedStatement statement = connection.prepareStatement("DELETE FROM postgres.public.routes WHERE " +
+                    "id=? AND ? IN (SELECT postgres.public.userdata.password FROM postgres.public.userdata " +
+                    "WHERE owner=?) AND owner=?;");
+
+            statement.setInt(1, id);
+            statement.setString(2, Account.hash256(user.getPassword()));
+            statement.setString(3, user.getUser());
+            statement.setString(4, user.getUser());
+
+            statement.executeUpdate();
+
             return true;
         } catch (SQLException sqlException) {
             GlobalLogger.logger.warn(sqlException.getMessage());
@@ -105,9 +136,16 @@ public class DatabaseWorker {
 
     public static boolean clear(User user) {
         try {
-            statement.executeUpdate("DELETE FROM postgres.public.routes WHERE '" +
-                    Account.hash256(user.getPassword()) + "' IN (SELECT postgres.public.userdata.password " +
-                    "FROM postgres.public.userdata where owner='" + user.getUser() + "') AND owner='" + user.getUser() + "';");
+            PreparedStatement statement = connection.prepareStatement("DELETE FROM postgres.public.routes WHERE ? " +
+                    "IN (SELECT postgres.public.userdata.password FROM postgres.public.userdata WHERE owner=?) AND " +
+                    "owner=?;");
+
+            statement.setString(1, user.getPassword());
+            statement.setString(2, user.getUser());
+            statement.setString(3, user.getUser());
+
+            statement.executeUpdate();
+
             return true;
         } catch (SQLException sqlException) {
             GlobalLogger.logger.warn(sqlException.getMessage());
