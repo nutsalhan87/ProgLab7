@@ -49,11 +49,19 @@ public class Session implements Runnable {
                 logger.info("Отправлен ответ клиенту.");
             }
         } catch (SocketException exs) {
+            logger.warn(exs.getMessage());
             logger.warn("Соединение с клиентом потеряно.");
-        } catch (ExecutionException | InterruptedException ass) {
-            logger.error(ass.getMessage());
-        } catch (IOException ignored) {
-            logger.error(ignored.getMessage());
+        } catch (ExecutionException executionException) {
+            logger.error(executionException.getMessage());
+        } catch (InterruptedException intExc) {
+            try {
+                socket.close();
+            } catch (IOException ioex) {
+                logger.error(ioex.getMessage());
+            }
+            logger.warn(intExc.getMessage());
+        } catch (IOException notIgnored) {
+            logger.error(notIgnored.getMessage());
             logger.warn("Мы не должны были придти сюда.");
         } finally {
             try {

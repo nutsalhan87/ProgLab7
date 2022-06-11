@@ -65,7 +65,7 @@ public class Commands {
     public static String update(List<Object> arguments, RouteCollection dataCollection, User user)
             throws NumberFormatException {
         lock.lock();
-        if (DatabaseWorker.updateById((Route)arguments.get(0), Integer.decode((String)arguments.get(1)), user)) {
+        if (DatabaseWorker.updateById((Route)arguments.get(0), (Integer)arguments.get(1), user)) {
             try {
                 dataCollection.updateData(DatabaseWorker.getAllRoutes());
             } catch (SQLException ignored) {}
@@ -198,5 +198,11 @@ public class Commands {
 
     public static String doNothing(List<Object> arguments, RouteCollection dataCollection, User user) {
         return "";
+    }
+
+    public static String checkId(List<Object> arguments, RouteCollection dataCollection, User user) {
+        long count = dataCollection.getData().stream()
+                .filter(n -> n.getId().equals(arguments.get(0)) && n.getOwner().equals(user.getUser())).count();
+        return count == 0 ? "FALSE" : "TRUE";
     }
 }

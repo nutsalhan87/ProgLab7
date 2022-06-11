@@ -38,13 +38,26 @@ public class CommandWorker {
             case UPDATE:
                 if (splittedCommand.size() >= 2) {
                     try {
-                        Integer.parseUnsignedInt(splittedCommand.get(1));
+                        Integer id = Integer.parseUnsignedInt(splittedCommand.get(1));
+                        Request requestCheckingId = new Request(CommandList.CHECK_ID, Collections.singletonList(id),
+                                user);
+                        SendRequest.sendRequest(requestCheckingId, socketChannel);
+                        String isIdAvaliable = (String) GetAnswer.getAnswer(socketChannel).getAnswer();
                         List<Object> objList = new LinkedList<>();
-                        objList.add(CreatingNewInstance.createNewRouteInstance(input));
-                        objList.addAll(splittedCommand.subList(1, splittedCommand.size()));
-                        return new Request(CommandList.UPDATE, objList, user);
+                        if (isIdAvaliable.equals("TRUE"))
+                        {
+                            objList.add(CreatingNewInstance.createNewRouteInstance(input));
+                            objList.add(id);
+                            return new Request(CommandList.UPDATE, objList, user);
+                        }
+                        else {
+                            System.out.println("Объект с таким id недосутпен для обновления.");
+                            return new Request(CommandList.NO_COMMAND, new LinkedList<>(), user);
+                        }
                     } catch (NumberFormatException exn) {
                         throw new WrongCommandException("В качестве id должно быть введено целое положительное число");
+                    } catch (ClassNotFoundException clexc) {
+                        System.out.println(clexc.getMessage());
                     }
                 } else
                     throw new WrongCommandException();

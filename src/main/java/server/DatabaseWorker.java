@@ -150,4 +150,23 @@ public class DatabaseWorker {
             return false;
         }
     }
+
+    public static boolean checkId(User user, Integer id) {
+        try {
+            PreparedStatement statement = connection.prepareStatement("SELECT * FROM postgres.public.routes " +
+                    "WHERE ? IN (SELECT postgres.public.userdata.password FROM postgres.public.userdata WHERE owner=?) " +
+                    "AND id=? AND owner=?;");
+            statement.setString(1, user.getPassword());
+            statement.setString(2, user.getPassword());
+            statement.setInt(3, id);
+            statement.setString(4, user.getUser());
+
+            ResultSet result = statement.executeQuery();
+
+            return result.next();
+        }catch (SQLException exc) {
+            logger.warn(exc.getMessage());
+            return false;
+        }
+    }
 }

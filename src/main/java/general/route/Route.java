@@ -131,6 +131,8 @@ public class Route implements Comparable<Route>, Serializable {
         return distance;
     }
 
+    public String getOwner() {return owner;}
+
     @Override
     public int compareTo(Route anotherRoute) {
         if (this.distance > anotherRoute.distance) return 1;

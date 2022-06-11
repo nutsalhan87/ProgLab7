@@ -21,7 +21,8 @@ public enum CommandList {
     FILTER_STARTS_WITH_NAME("filter_starts_with_name", Commands::filterStartsWithName),
     NO_COMMAND("no_command", Commands::doNothing),
     NEW_USER("new_user", Commands::doNothing),
-    LOG_IN("log_in", Commands::doNothing);
+    LOG_IN("log_in", Commands::doNothing),
+    CHECK_ID("", Commands::checkId);
 
     private final String name;
     Command command;

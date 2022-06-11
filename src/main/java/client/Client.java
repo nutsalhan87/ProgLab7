@@ -55,7 +55,7 @@ public class Client {
                     } catch (WrongCommandException exc) {
                         System.out.println(exc.getMessage());
                     } catch (IOException ioexc) {
-                        System.out.println("Файл скрипта недоступен.");
+                        throw new ConnectException("Соединение было разорвано.");
                     } catch (ClassNotFoundException ignored) {
                         System.out.println("Такое не должно произойти.");
                     }
