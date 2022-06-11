@@ -40,7 +40,7 @@ public class Account {
         String password = (String)(request.getArguments().get(1));
         ExecutorService fixedThreadPool = Executors.newFixedThreadPool(1);
         try {
-            ResultSet resultSet = statement.executeQuery("SELECT password FROM postgres.public.userdata WHERE owner='" + user + "';");
+            ResultSet resultSet = statement.executeQuery("SELECT password FROM userdata WHERE owner='" + user + "';");
             resultSet.next();
             if (resultSet.getString("password").equals(hash256(password))) {
                 fixedThreadPool.submit(new SendAnswer(new Answer(Boolean.TRUE), socket));
@@ -54,6 +54,7 @@ public class Account {
             }
         } catch (SQLException sqex) {
             fixedThreadPool.submit(new SendAnswer(new Answer(Boolean.FALSE), socket));
+            logger.info(sqex.getMessage());
             logger.info("Пользователь " + user + " пытался авторизоваться, но его нет в системе.");
             return false;
         }
@@ -62,9 +63,9 @@ public class Account {
     public static boolean newUser(Socket socket, Request request) throws IOException {
         String user = (String)(request.getArguments().get(0));
         String password = (String)(request.getArguments().get(1));
-        ExecutorService fixedThreadPool = Executors.newFixedThreadPool(5);
+        ExecutorService fixedThreadPool = Executors.newFixedThreadPool(1);
         try {
-            ResultSet resultSet = statement.executeQuery("SELECT owner FROM postgres.public.userdata WHERE owner='" + user + "';");
+            ResultSet resultSet = statement.executeQuery("SELECT owner FROM userdata WHERE owner='" + user + "';");
             if (resultSet.next()) {
                 fixedThreadPool.submit(new SendAnswer(new Answer(Boolean.FALSE), socket));
                 logger.info("Пользователь " + user + " пытался зарегистрироваться, но такой идентефикатор уже есть в системе.");
@@ -78,6 +79,7 @@ public class Account {
             }
         } catch (SQLException sqex) {
             fixedThreadPool.submit(new SendAnswer(new Answer(Boolean.FALSE), socket));
+            logger.warn(sqex.getMessage());
             logger.warn("Произошла ошибка при попытке регистрации пользователя " + user + ".");
             return false;
         }
@@ -85,7 +87,7 @@ public class Account {
 
     public static void addUser(String user, String password) throws SQLException {
         lock.lock();
-        statement.executeUpdate("INSERT INTO postgres.public.userdata VALUES('" + user + "', '" + hash256(password) + "');");
+        statement.executeUpdate("INSERT INTO userdata VALUES('" + user + "', '" + hash256(password) + "');");
         lock.unlock();
     }
 

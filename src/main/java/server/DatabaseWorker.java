@@ -22,6 +22,7 @@ public class DatabaseWorker {
             String password = bufferedReader.readLine();
             connection = DriverManager.getConnection(url, user, password);
         } catch (IOException | SQLException exc) {
+            logger.error(exc.getMessage());
             logger.error("Невозможно подключиться к базе данных. Без нее серверу капут.");
             System.exit(-1);
         }
@@ -30,7 +31,7 @@ public class DatabaseWorker {
     private DatabaseWorker() {}
 
     public static List<Route> getAllRoutes() throws SQLException {
-        ResultSet resultSet = connection.createStatement().executeQuery("SELECT * FROM postgres.public.routes");
+        ResultSet resultSet = connection.createStatement().executeQuery("SELECT * FROM routes");
 
         return getRoutes(resultSet);
     }
@@ -55,7 +56,7 @@ public class DatabaseWorker {
 
     public static boolean addNewRoute(Route route, User user) {
         try {
-            PreparedStatement statement = connection.prepareStatement("INSERT INTO postgres.public.routes " +
+            PreparedStatement statement = connection.prepareStatement("INSERT INTO routes " +
                     "values((select nextval('serial')), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);");
             statement.setString(1, route.getName());
             statement.setDouble(2, route.getCoordinates().getX());
@@ -81,7 +82,7 @@ public class DatabaseWorker {
 
     public static boolean updateById(Route route, Integer id, User user) {
         try {
-            PreparedStatement statement = connection.prepareStatement("UPDATE postgres.public.routes SET " +
+            PreparedStatement statement = connection.prepareStatement("UPDATE routes SET " +
                     "name=?, c_x=?, c_y=?, creation_date=?, from_x=?, from_y=?, from_z=?,from_name=?, to_x=?, to_y=?," +
                     "to_z=?, distance=? WHERE ? IN (SELECT postgres.public.userdata.password FROM postgres.public.userdata " +
                     "WHERE owner=?) AND id=? AND owner=?;");
@@ -114,9 +115,8 @@ public class DatabaseWorker {
 
     public static boolean removeById(Integer id, User user) {
         try {
-            PreparedStatement statement = connection.prepareStatement("DELETE FROM postgres.public.routes WHERE " +
-                    "id=? AND ? IN (SELECT postgres.public.userdata.password FROM postgres.public.userdata " +
-                    "WHERE owner=?) AND owner=?;");
+            PreparedStatement statement = connection.prepareStatement("DELETE FROM routes WHERE " +
+                    "id=? AND ? IN (SELECT userdata.password FROM userdata WHERE owner=?) AND owner=?;");
 
             statement.setInt(1, id);
             statement.setString(2, Account.hash256(user.getPassword()));
@@ -134,9 +134,8 @@ public class DatabaseWorker {
 
     public static boolean clear(User user) {
         try {
-            PreparedStatement statement = connection.prepareStatement("DELETE FROM postgres.public.routes WHERE ? " +
-                    "IN (SELECT postgres.public.userdata.password FROM postgres.public.userdata WHERE owner=?) AND " +
-                    "owner=?;");
+            PreparedStatement statement = connection.prepareStatement("DELETE FROM routes WHERE ? " +
+                    "IN (SELECT userdata.password FROM userdata WHERE owner=?) AND owner=?;");
 
             statement.setString(1, user.getPassword());
             statement.setString(2, user.getUser());
@@ -153,9 +152,8 @@ public class DatabaseWorker {
 
     public static boolean checkId(User user, Integer id) {
         try {
-            PreparedStatement statement = connection.prepareStatement("SELECT * FROM postgres.public.routes " +
-                    "WHERE ? IN (SELECT postgres.public.userdata.password FROM postgres.public.userdata WHERE owner=?) " +
-                    "AND id=? AND owner=?;");
+            PreparedStatement statement = connection.prepareStatement("SELECT * FROM routes " +
+                    "WHERE ? IN (SELECT userdata.password FROM userdata WHERE owner=?) AND id=? AND owner=?;");
             statement.setString(1, user.getPassword());
             statement.setString(2, user.getPassword());
             statement.setInt(3, id);
