@@ -19,7 +19,9 @@ import java.util.concurrent.locks.ReentrantLock;
 public class Account {
     private static final ReentrantLock lock = new ReentrantLock();
     private static Statement statement;
+    private static org.apache.logging.log4j.Logger logger;
     static {
+        logger = org.apache.logging.log4j.LogManager.getLogger();
         try {
             BufferedReader bufferedReader = new BufferedReader(new FileReader("database.txt"));
             String url = bufferedReader.readLine();
@@ -28,7 +30,7 @@ public class Account {
             Connection connection = DriverManager.getConnection(url, user, password);
             statement = connection.createStatement();
         } catch (IOException | SQLException exc) {
-            GlobalLogger.logger.error("Невозможно подключиться к базе данных пользователей. Без нее серверу капут.");
+            logger.error("Невозможно подключиться к базе данных пользователей. Без нее серверу капут.");
             System.exit(-1);
         }
     }
@@ -36,20 +38,23 @@ public class Account {
     public static boolean logIn(Socket socket, Request request) throws IOException {
         String user = (String)(request.getArguments().get(0));
         String password = (String)(request.getArguments().get(1));
-        ExecutorService fixedThreadPool = Executors.newFixedThreadPool(5);
+        ExecutorService fixedThreadPool = Executors.newFixedThreadPool(1);
         try {
             ResultSet resultSet = statement.executeQuery("SELECT password FROM postgres.public.userdata WHERE owner='" + user + "';");
             resultSet.next();
             if (resultSet.getString("password").equals(hash256(password))) {
                 fixedThreadPool.submit(new SendAnswer(new Answer(Boolean.TRUE), socket));
                 fixedThreadPool.submit(new SendAnswer(new Answer(new User(user, password)), socket));
+                logger.info("Пользователь " + user + " успешно авторизовался.");
                 return true;
             } else {
                 fixedThreadPool.submit(new SendAnswer(new Answer(Boolean.FALSE), socket));
+                logger.info("У пользователя " + user + " не совпал пароль.");
                 return false;
             }
         } catch (SQLException sqex) {
             fixedThreadPool.submit(new SendAnswer(new Answer(Boolean.FALSE), socket));
+            logger.info("Пользователь " + user + " пытался авторизоваться, но его нет в системе.");
             return false;
         }
     }
@@ -62,15 +67,18 @@ public class Account {
             ResultSet resultSet = statement.executeQuery("SELECT owner FROM postgres.public.userdata WHERE owner='" + user + "';");
             if (resultSet.next()) {
                 fixedThreadPool.submit(new SendAnswer(new Answer(Boolean.FALSE), socket));
+                logger.info("Пользователь " + user + " пытался зарегистрироваться, но такой идентефикатор уже есть в системе.");
                 return false;
             } else {
                 addUser(user, password);
                 fixedThreadPool.submit(new SendAnswer(new Answer(Boolean.TRUE), socket));
                 fixedThreadPool.submit(new SendAnswer(new Answer(new User(user, password)), socket));
+                logger.info("Пользователь " + user + " успешно зарегистрировался в системе.");
                 return true;
             }
         } catch (SQLException sqex) {
             fixedThreadPool.submit(new SendAnswer(new Answer(Boolean.FALSE), socket));
+            logger.warn("Произошла ошибка при попытке регистрации пользователя " + user + ".");
             return false;
         }
     }

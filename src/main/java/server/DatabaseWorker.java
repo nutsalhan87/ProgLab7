@@ -7,14 +7,14 @@ import general.route.location.first.Location;
 
 import java.io.*;
 import java.sql.*;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
 
 public class DatabaseWorker {
     private static Connection connection;
-
+    private static org.apache.logging.log4j.Logger logger;
     static {
+        logger = org.apache.logging.log4j.LogManager.getLogger();
         try {
             BufferedReader bufferedReader = new BufferedReader(new FileReader("database.txt"));
             String url = bufferedReader.readLine();
@@ -22,7 +22,7 @@ public class DatabaseWorker {
             String password = bufferedReader.readLine();
             connection = DriverManager.getConnection(url, user, password);
         } catch (IOException | SQLException exc) {
-            GlobalLogger.logger.error("Невозможно подключиться к базе данных. Без нее серверу капут.");
+            logger.error("Невозможно подключиться к базе данных. Без нее серверу капут.");
             System.exit(-1);
         }
     }
@@ -74,7 +74,7 @@ public class DatabaseWorker {
             statement.executeUpdate();
             return true;
         } catch (SQLException sqlException) {
-            GlobalLogger.logger.warn(sqlException.getMessage());
+            logger.warn(sqlException.getMessage());
             return false;
         }
     }
@@ -107,7 +107,7 @@ public class DatabaseWorker {
 
             return statement.getUpdateCount() != 0;
         } catch (SQLException sqlException) {
-            GlobalLogger.logger.warn(sqlException.getMessage());
+            logger.warn(sqlException.getMessage());
             return false;
         }
     }
@@ -127,7 +127,7 @@ public class DatabaseWorker {
 
             return true;
         } catch (SQLException sqlException) {
-            GlobalLogger.logger.warn(sqlException.getMessage());
+            logger.warn(sqlException.getMessage());
             return false;
         }
     }
@@ -146,7 +146,7 @@ public class DatabaseWorker {
 
             return true;
         } catch (SQLException sqlException) {
-            GlobalLogger.logger.warn(sqlException.getMessage());
+            logger.warn(sqlException.getMessage());
             return false;
         }
     }

@@ -7,14 +7,14 @@ import java.net.Socket;
 import java.net.SocketException;
 import java.util.concurrent.*;
 
-import static server.GlobalLogger.logger;
-
 public class Session implements Runnable {
     private final Socket socket;
     private RouteCollection dataCollection;
+    private org.apache.logging.log4j.Logger logger;
     public Session(Socket socket, RouteCollection dataCollection) {
         this.dataCollection = dataCollection;
         this.socket = socket;
+        logger = org.apache.logging.log4j.LogManager.getLogger();
     }
 
     @Override
@@ -42,16 +42,18 @@ public class Session implements Runnable {
             ExecutorService fixedThreadPool = Executors.newFixedThreadPool(5);
             while (!Thread.interrupted()) {
                 request = requestReader.submit(new GetRequest(socket));
-                logger.info("Запрос от клиента получен");
+                logger.info("Запрос от клиента получен.");
                 answer = requestResponser.submit(new ResponseToRequest(request.get().getCommand().getExecutableCommand(),
                         request.get().getArguments(), dataCollection, request.get().getUser()));
                 fixedThreadPool.submit(new SendAnswer(answer.get(), socket));
-                logger.info("Отправлен ответ клиенту");
+                logger.info("Отправлен ответ клиенту.");
             }
         } catch (SocketException exs) {
-            logger.warn("Соединение с клиентом потеряно");
-        } catch (ExecutionException | InterruptedException ignored) {
+            logger.warn("Соединение с клиентом потеряно.");
+        } catch (ExecutionException | InterruptedException ass) {
+            logger.error(ass.getMessage());
         } catch (IOException ignored) {
+            logger.error(ignored.getMessage());
             logger.warn("Мы не должны были придти сюда.");
         } finally {
             try {

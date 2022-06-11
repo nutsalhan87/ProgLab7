@@ -6,10 +6,10 @@ import java.io.InputStreamReader;
 import java.net.ServerSocket;
 import java.sql.SQLException;
 
-import static server.GlobalLogger.logger;
-
 public class Server {
     public static void main(String[] args) throws IOException {
+        org.apache.logging.log4j.Logger logger = org.apache.logging.log4j.LogManager.getLogger();
+
         RouteCollection routeCollection = new RouteCollection();
         try {
             routeCollection.updateData(DatabaseWorker.getAllRoutes());
@@ -18,7 +18,7 @@ public class Server {
             System.exit(-1);
         }
 
-        logger.info("Введите порт");
+        System.out.println("Введите порт:");
         int port;
         while (true) {
             try {

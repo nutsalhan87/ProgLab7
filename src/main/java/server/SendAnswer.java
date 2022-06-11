@@ -12,10 +12,12 @@ public class SendAnswer implements Runnable {
     private Answer answer;
     private Socket socket;
     private ReentrantLock lock;
+    private org.apache.logging.log4j.Logger logger;
     SendAnswer(Answer answer, Socket socket) {
         this.answer = answer;
         this.socket = socket;
         lock = new ReentrantLock();
+        logger = org.apache.logging.log4j.LogManager.getLogger();
     }
 
     @Override
@@ -26,10 +28,11 @@ public class SendAnswer implements Runnable {
             ByteBuffer byteBuffer = Serializer.serialize(answer);
             outputStream.write(byteBuffer.array(), 0, byteBuffer.limit());
             outputStream.flush();
+            logger.info("Ответ успешно передан клиенту.");
             lock.unlock();
         } catch (IOException ioException) {
-            GlobalLogger.logger.error(ioException.getMessage());
-            GlobalLogger.logger.error("Такое может произойти в случае разрыва соединения.");
+            logger.error(ioException.getMessage());
+            logger.error("Это произошло из-за разрыва соединения.");
             lock.unlock();
         }
     }

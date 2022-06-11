@@ -3,7 +3,6 @@ package client;
 import general.Answer;
 import general.BufferSize;
 import general.Serializer;
-import server.GlobalLogger;
 
 import java.io.*;
 import java.nio.ByteBuffer;
@@ -28,7 +27,7 @@ public class GetAnswer {
             } catch (EOFException ignored) {}
         }
 
-        GlobalLogger.logger.warn("соединение внезапно прервалось");
+        System.out.println("Соединение внезапно прервалось");
 
         return null; //Этого не произойдет, но Леша сказал, что может
     }
