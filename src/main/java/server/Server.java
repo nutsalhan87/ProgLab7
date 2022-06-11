@@ -14,6 +14,7 @@ public class Server {
         try {
             routeCollection.updateData(DatabaseWorker.getAllRoutes());
         } catch (SQLException exc) {
+            logger.error(exc.getMessage());
             logger.error("Невозможно получить коллекцию из БД. Без нее всей программе капут. Пока.");
             System.exit(-1);
         }

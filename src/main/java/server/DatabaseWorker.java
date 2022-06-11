@@ -39,7 +39,7 @@ public class DatabaseWorker {
         List<Route> data = new ArrayList<>();
         while (resultSet.next()) {
             data.add(new Route(
-                    resultSet.getString("name"), resultSet.getDate("creationDate"),
+                    resultSet.getString("name"), resultSet.getDate("creation_date"),
                     new Coordinates(resultSet.getDouble("c_x"), resultSet.getInt("c_y")),
                     new Location(resultSet.getDouble("from_x"),
                             resultSet.getLong("from_y"), resultSet.getLong("from_z"),
@@ -82,7 +82,7 @@ public class DatabaseWorker {
     public static boolean updateById(Route route, Integer id, User user) {
         try {
             PreparedStatement statement = connection.prepareStatement("UPDATE postgres.public.routes SET " +
-                    "name=?, c_x=?, c_y=?, creationdate=?, from_x=?, from_y=?, from_z=?,from_name=?, to_x=?, to_y=?," +
+                    "name=?, c_x=?, c_y=?, creation_date=?, from_x=?, from_y=?, from_z=?,from_name=?, to_x=?, to_y=?," +
                     "to_z=?, distance=? WHERE ? IN (SELECT postgres.public.userdata.password FROM postgres.public.userdata " +
                     "WHERE owner=?) AND id=? AND owner=?;");
 
